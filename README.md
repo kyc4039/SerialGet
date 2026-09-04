@@ -10,6 +10,7 @@
 | `console_bridge.py` | COM5에서 시리얼 라인을 읽어 파싱한 뒤 `console_data.db`(SQLite)에 저장하는 브릿지 |
 | `console_data.db` | 수집된 센서 읽기값이 쌓이는 SQLite DB (`readings` 테이블) |
 | `console_dashboard/` | Streamlit 멀티페이지 대시보드 앱 |
+| `Sensor/Sensor.ino` | 실제 센서 보드에 올리는 아두이노 펌웨어 (`sender.py`가 하는 시뮬레이션을 실제 하드웨어로 대체) |
 
 ### 대시보드 페이지 구성 (`console_dashboard/`)
 
@@ -30,6 +31,35 @@
 ```
 switch:1,cds:512,flame:900,water:120,sound:0,reed:0,hit:1,dist:45,temp:24.3,hum:52.1
 ```
+
+## 하드웨어 구성 (`Sensor/Sensor.ino`)
+
+버튼으로 페이지를 넘겨가며 OLED에 센서값을 표시하고, 동시에 시리얼로 전체 센서값을 송신하는 펌웨어입니다.
+
+| 부품 | 핀 | 비고 |
+|---|---|---|
+| SSD1306 OLED (128×64) | I2C (SDA/SCL) | 주소 `0x3C` |
+| DHT11 (온습도) | D4 | |
+| CdS 조도 센서 | A0 | 아날로그 |
+| 화염 센서 | A1 | 아날로그 |
+| 수위 센서 | A2 | 아날로그 |
+| 사운드 센서 | D5 | 디지털 |
+| 리드/도어 스위치 | D6 | 디지털, `INPUT_PULLUP` |
+| 초음파 거리센서 (HC-SR04) | Trig D7 / Echo D8 | |
+| 진동(충격) 센서 | D9 | 디지털, `INPUT_PULLUP` |
+| 페이지 전환 버튼 | D2 | 디지털, `INPUT_PULLUP` |
+
+시리얼 통신은 115200bps이며, `console_bridge.py`가 그대로 파싱할 수 있는 포맷(`cds,flame,water,sound,reed,hit,dist,temp,hum`)으로 전송합니다. `switch` 필드는 연결 상태가 아니라 **현재 OLED 페이지 번호(0~8)** 이니 참고하세요.
+
+### 업로드 방법
+
+1. Arduino IDE에서 아래 라이브러리 설치 (라이브러리 매니저)
+   - `Adafruit GFX Library`
+   - `Adafruit SSD1306`
+   - `DHT sensor library` (Adafruit, `DHT_U` 포함)
+2. 위 표대로 배선
+3. `Sensor/Sensor.ino` 열고 보드/포트 선택 후 업로드
+4. 업로드 후 `console_bridge.py`의 `SERIAL_PORT`를 보드가 연결된 COM 포트로 맞추고 실행
 
 ## 요구 사항
 
